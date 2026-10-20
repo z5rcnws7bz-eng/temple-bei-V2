@@ -55,7 +55,7 @@ Do not store account passwords or privileged Supabase keys in this repository.
 
 ## Directory synchronization
 
-`supabase/migrations/20261020_directory_sync.sql` backfills missing account profiles
+`supabase/migrations/20261020_directory_sync.sql` (applied to production) backfills missing account profiles
 and keeps account emails synchronized after registration or account updates.
 `portal_directory` joins profiles to existing Supabase Auth accounts by immutable
 user ID; disabled accounts and orphaned profiles are excluded. Profile names,
