@@ -30,3 +30,25 @@ Browser verification remains unavailable under the browser service access policy
 
 ## Member directory
 Signed-in members can search saved profiles by name, major, and year, then open each profile's current bio and academic details. Directory API responses exclude emails, availability, hour logs, and account-management fields. Disabled members are omitted; member profiles are read from D1 at each open. Members edit their own information under Profile.
+
+## Vercel account access (October 20, 2026)
+
+Vercel uses Supabase email/password authentication. Set `VITE_SUPABASE_URL` to
+the project origin (without `/rest/v1/`) and set `VITE_SUPABASE_ANON_KEY` to the
+publishable key. `/login` and `/app` are client routes served by the Vercel rewrite.
+Email confirmation and invitation links return to `/login`; invitations provide
+a password setup form. Production never uses the local simulated accounts or
+email verification helper.
+
+Apply `supabase/migrations/20261020_portal_account_access.sql` for the authenticated
+account API. This migration was applied to production. Admin roles are assigned
+by a trusted operator in Auth app metadata (`portal_role: admin`); email names,
+user-editable metadata, and browser identity headers cannot grant admin access.
+The account API checks verified membership and serves state, profile, directory,
+availability, admin member management, and board reads. Hours, shift mutations,
+and newsletter publication still require migration from the Sites Worker; those
+unsupported actions return an explicit error instead of pretending to save.
+
+Aganiele Cetoute was invited separately through Supabase Authentication and
+assigned the approved admin role. Passwords are chosen by the account owner.
+Do not store account passwords or privileged Supabase keys in this repository.
