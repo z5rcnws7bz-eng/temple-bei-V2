@@ -137,3 +137,14 @@ test('availability is saved through the account-bound RPC',async()=>{
  try{assert.equal((await supabasePortalRequest('availability','PUT',days)).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('coordinator roster mutations route to authenticated Supabase transactions',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'roster-test-token',user:{id:'officer'}});
+ let action;
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_roster_action$/);assert.equal(options.headers.Authorization,'Bearer roster-test-token');assert.deepEqual(JSON.parse(options.body),{action,roster_data:{shiftId:'shift',memberId:'member'}});return new Response('{"ok":true}');};
+ try{for(action of ['board/shifts/assign','board/shifts/remove','board/shifts/swap'])assert.equal((await supabasePortalRequest(action,'POST',{shiftId:'shift',memberId:'member'})).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
