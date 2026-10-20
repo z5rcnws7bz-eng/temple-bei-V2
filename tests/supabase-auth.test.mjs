@@ -76,3 +76,20 @@ test('Jace can sign in only through Admin and Admin requires server-assigned adm
   assert.throws(()=>assertLoginPortal('member@temple.edu','Admin',{app_metadata:{}}),/does not have administrator/);
   assert.doesNotThrow(()=>assertLoginPortal('member@temple.edu','Member',{app_metadata:{}}));
 });
+
+test('account deletion uses the protected RPC and forwards explicit email confirmation',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const originalFetch=globalThis.fetch;
+ const descriptor=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+ const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'admin-test-token',user:{id:'admin'}});
+ globalThis.fetch=async(url,options)=>{
+  assert.match(url,/\/rpc\/portal_delete_member$/);
+  assert.equal(options.headers.Authorization,'Bearer admin-test-token');
+  assert.deepEqual(JSON.parse(options.body),{member_id:'target',confirmation_email:'target@example.invalid'});
+  return new Response(JSON.stringify({message:'Only chapter administrators can delete accounts.'}),{status:403});
+ };
+ try{await assert.rejects(supabasePortalRequest('admin/member/delete','POST',{id:'target',confirmationEmail:'target@example.invalid'}),/Only chapter administrators/);}
+ finally{globalThis.fetch=originalFetch;if(descriptor)Object.defineProperty(globalThis,'localStorage',descriptor);else delete globalThis.localStorage;}
+});

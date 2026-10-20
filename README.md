@@ -63,3 +63,17 @@ majors, years, and bios come from the saved profile. Directory results omit priv
 account fields. Accounts with matching names remain separate. The frontend uses
 this one authenticated source and refreshes it on entry and tab focus; errors are
 shown explicitly instead of falling back to stale data.
+
+## Account deletion with data retention
+
+The Admin member controls include Delete account. Administrators must type the
+member email to confirm; the server validates the administrator and blocks
+self-deletion. `supabase/migrations/20261020_delete_member.sql` adds the protected
+RPCs. Deletion removes the Supabase Auth account and archives the profile with
+`disabled=1`, `deleted_at`, and `deleted_by`. The profile ID and associated records
+remain for later studies/informatics. Member lists, directory, review queues, and
+rosters omit the archived account; current app API requests fail after Auth removal.
+This is account deletion, not erasure of collected data. Accounts owning Storage
+objects are blocked until ownership is transferred; a failure rolls the operation
+back. `supabase/tests/delete_member.sql` verifies authorization, typed confirmation,
+self-protection, retention, visibility, and access using rolled-back fixtures.
