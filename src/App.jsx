@@ -377,7 +377,7 @@ export function LoginPage({user,error,onRetry,onAuthSuccess,onSignOut}){
     setAuthSuccess(res.message);
     setUnconfirmedEmail(email.trim().toLowerCase());
    } else {
-    const session=await signInWithPassword({email,password});
+    const session=await signInWithPassword({email,password,portal:entry});
     setAuthSuccess('Signed in successfully!');
     if(onAuthSuccess)await onAuthSuccess(session);
    }

@@ -173,8 +173,15 @@ export function confirmLocalEmail(email) {
  * Sign in with email and password.
  * Enforces email confirmation check.
  */
-export async function signInWithPassword({ email, password }) {
+export function assertLoginPortal(email, portal, user) {
+  const adminOnly = email.trim().toLowerCase() === 'jace.roman@temple.edu' || user?.app_metadata?.admin_login_only === true;
+  if (adminOnly && portal !== 'Admin') throw new Error('This account must sign in through the Admin section. Select Admin above and try again.');
+  if (portal === 'Admin' && user && user.app_metadata?.portal_role !== 'admin') throw new Error('This account does not have administrator access.');
+}
+
+export async function signInWithPassword({ email, password, portal = 'Member' }) {
   const cleanEmail = email.trim().toLowerCase();
+  assertLoginPortal(cleanEmail, portal);
 
   if (!cleanEmail || !password) {
     throw new Error('Please provide both your email and password.');
@@ -234,6 +241,8 @@ export async function signInWithPassword({ email, password }) {
       email: cleanEmail,
       password,
     });
+
+    assertLoginPortal(cleanEmail, portal, data.user);
 
     if (data.user && !data.user.confirmed_at && data.user.email_confirmed_at === null) {
       throw new Error('Your email address has not been confirmed yet. Please verify your email before logging in.');

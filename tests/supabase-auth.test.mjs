@@ -68,3 +68,11 @@ test('directory uses the authenticated Supabase endpoint and preserves account I
     if(storageDescriptor)Object.defineProperty(globalThis,'localStorage',storageDescriptor);else delete globalThis.localStorage;
   }
 });
+
+test('Jace can sign in only through Admin and Admin requires server-assigned admin role', async()=>{
+  const {assertLoginPortal}=await import('../src/supabase.js');
+  for(const portal of ['Member','E-board'])assert.throws(()=>assertLoginPortal(' JACE.ROMAN@TEMPLE.EDU ',portal),/Admin section/);
+  assert.doesNotThrow(()=>assertLoginPortal('jace.roman@temple.edu','Admin',{app_metadata:{portal_role:'admin'}}));
+  assert.throws(()=>assertLoginPortal('member@temple.edu','Admin',{app_metadata:{}}),/does not have administrator/);
+  assert.doesNotThrow(()=>assertLoginPortal('member@temple.edu','Member',{app_metadata:{}}));
+});
