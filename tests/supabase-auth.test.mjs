@@ -126,3 +126,14 @@ test('all hour mutations use the protected audited Supabase RPC',async()=>{
  try{for(action of ['hours','hours/remove','hours/restore','board/review'])assert.equal((await supabasePortalRequest(action,'POST',{id:'entry'})).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('availability is saved through the account-bound RPC',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'availability-test-token',user:{id:'member'}});
+ const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(day=>({day,enabled:false,start:'09:00',end:'12:00'}));
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_save_availability$/);assert.equal(options.headers.Authorization,'Bearer availability-test-token');assert.deepEqual(JSON.parse(options.body),{availability_data:days});return new Response('{"ok":true}');};
+ try{assert.equal((await supabasePortalRequest('availability','PUT',days)).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
