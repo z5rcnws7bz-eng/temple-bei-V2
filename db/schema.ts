@@ -1,0 +1,7 @@
+import {sqliteTable,text,integer} from 'drizzle-orm/sqlite-core';
+export const profiles=sqliteTable('profiles',{id:text('id').primaryKey(),email:text('email').notNull(),name:text('name').notNull(),major:text('major').notNull().default(''),year:text('year').notNull().default(''),bio:text('bio').notNull().default(''),availability:text('availability').notNull().default('[]'),disabled:integer('disabled').notNull().default(0),created:text('created').notNull()});
+export const hours=sqliteTable('hours',{id:text('id').primaryKey(),owner:text('owner').notNull(),payload:text('payload').notNull(),deleted:integer('deleted').notNull().default(0),updated:text('updated').notNull()});
+export const shifts=sqliteTable('shifts',{id:text('id').primaryKey(),payload:text('payload').notNull(),capacity:integer('capacity').notNull(),taken:integer('taken').notNull().default(0)});
+export const bookings=sqliteTable('bookings',{id:text('id').primaryKey(),shift_id:text('shift_id').notNull(),owner:text('owner').notNull()});
+export const newsletters=sqliteTable('newsletters',{id:text('id').primaryKey(),title:text('title').notNull(),body:text('body').notNull(),published:integer('published').notNull().default(0),author:text('author').notNull(),updated:text('updated').notNull()});
+export const attempts=sqliteTable('attempts',{id:text('id').primaryKey(),count:integer('count').notNull().default(0),since:integer('since').notNull()});
