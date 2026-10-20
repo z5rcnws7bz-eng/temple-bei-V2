@@ -40,3 +40,6 @@ end;
 $$;
 revoke all on function public.portal_directory(text) from public,anon;
 grant execute on function public.portal_directory(text) to authenticated;
+
+-- Photos and profile details are for signed-in chapter accounts, not anonymous API calls.
+revoke select on public.profiles from anon;
