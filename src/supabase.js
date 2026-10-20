@@ -388,6 +388,17 @@ export async function setAccountPassword(password) {
   return session;
 }
 
+let sessionRefresh;
+async function refreshPortalSession(previous){
+ if(!sessionRefresh){sessionRefresh=(async()=>{
+  const data=await supabaseAuthRequest('token?grant_type=refresh_token',{refresh_token:previous.refresh_token});
+  if(getStoredSession()?.access_token!==previous.access_token)return getStoredSession();
+  const next={...previous,access_token:data.access_token,refresh_token:data.refresh_token||previous.refresh_token};
+  setStoredSession(next);return next;
+ })().finally(()=>{sessionRefresh=null;});}
+ return sessionRefresh;
+}
+
 export async function supabasePortalRequest(path, method = 'GET', body) {
   const session = getStoredSession();
   if (!session?.access_token) throw Object.assign(new Error('Sign in to continue.'), {status: 401});
@@ -397,15 +408,21 @@ export async function supabasePortalRequest(path, method = 'GET', body) {
   const boardRequest = method === 'GET' && ['board','board/roster'].includes(path);
   const availabilityRequest = path === 'availability' && method === 'PUT';
   const rosterRequest = method === 'POST' && ['board/shifts/assign','board/shifts/remove','board/shifts/swap'].includes(path);
+  const newsletterRequest = path === 'board/newsletter' && method === 'POST';
+  const bookingRequest = method === 'POST' && ['shifts/book','shifts/drop'].includes(path);
   const hoursRequest = method === 'POST' && ['hours','hours/remove','hours/restore','board/review'].includes(path);
   const shiftRequest = path === 'board/shifts' && method === 'POST';
   const profileRequest = path === 'profile' && method === 'PUT';
-  const rpc = rosterRequest ? 'portal_roster_action' : availabilityRequest ? 'portal_save_availability' : hoursRequest ? 'portal_hours_action' : shiftRequest ? 'portal_create_shift' : profileRequest ? 'portal_update_profile' : boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
-  const payload = rosterRequest ? {action: path, roster_data: body} : availabilityRequest ? {availability_data: body} : hoursRequest ? {action: path, entry_data: body} : shiftRequest ? {shift_data: body} : profileRequest ? {profile_data: body} : boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
-    method: 'POST', headers: {apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json'},
-    body: JSON.stringify(payload),
+  const rpc = bookingRequest ? 'portal_booking_action' : newsletterRequest ? 'portal_save_newsletter' : rosterRequest ? 'portal_roster_action' : availabilityRequest ? 'portal_save_availability' : hoursRequest ? 'portal_hours_action' : shiftRequest ? 'portal_create_shift' : profileRequest ? 'portal_update_profile' : boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
+  const payload = bookingRequest ? {action:path,booking_data:body} : newsletterRequest ? {newsletter_data: body} : rosterRequest ? {action: path, roster_data: body} : availabilityRequest ? {availability_data: body} : hoursRequest ? {action: path, entry_data: body} : shiftRequest ? {shift_data: body} : profileRequest ? {profile_data: body} : boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
+  const request=token=>fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
+    method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),
   });
+  let response=await request(session.access_token);
+  if(response.status===401&&session.refresh_token){
+   const renewed=await refreshPortalSession(session);
+   if(renewed?.access_token)response=await request(renewed.access_token);
+  }
   const result = await response.json();
   if (!response.ok) throw Object.assign(new Error(result.message || 'The chapter service is unavailable.'), {status: response.status});
   return result;

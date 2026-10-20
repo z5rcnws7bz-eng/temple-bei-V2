@@ -148,3 +148,33 @@ test('coordinator roster mutations route to authenticated Supabase transactions'
  try{for(action of ['board/shifts/assign','board/shifts/remove','board/shifts/swap'])assert.equal((await supabasePortalRequest(action,'POST',{shiftId:'shift',memberId:'member'})).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('newsletter saves use protected author-aware RPC',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'newsletter-test-token',user:{id:'officer'}});
+ const post={title:'Hello',body:'https://temple.edu',published:true,images:[]};
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_save_newsletter$/);assert.equal(options.headers.Authorization,'Bearer newsletter-test-token');assert.deepEqual(JSON.parse(options.body),{newsletter_data:post});return new Response('{"ok":true}');};
+ try{assert.equal((await supabasePortalRequest('board/newsletter','POST',post)).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
+test('expired API sessions refresh once and retry with renewed credentials',async()=>{
+ const {supabasePortalRequest,setStoredSession,getStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'expired',refresh_token:'refresh-one',user:{id:'member'}});let calls=0;
+ globalThis.fetch=async(url,options)=>{calls++;if(calls===1)return new Response('{"message":"JWT expired"}',{status:401});if(calls===2){assert.match(url,/grant_type=refresh_token/);assert.equal(JSON.parse(options.body).refresh_token,'refresh-one');return new Response('{"access_token":"renewed","refresh_token":"refresh-two"}');}assert.equal(options.headers.Authorization,'Bearer renewed');return new Response('{"ok":true}');};
+ try{assert.equal((await supabasePortalRequest('state')).ok,true);assert.equal(calls,3);assert.equal(getStoredSession().refresh_token,'refresh-two');}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
+
+test('member pickup and drop use account-bound booking transactions',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'booking-test-token',user:{id:'member'}});let action;
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_booking_action$/);assert.equal(options.headers.Authorization,'Bearer booking-test-token');assert.deepEqual(JSON.parse(options.body),{action,booking_data:{id:'shift'}});return new Response('{"ok":true}');};
+ try{for(action of ['shifts/book','shifts/drop'])assert.equal((await supabasePortalRequest(action,'POST',{id:'shift'})).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
