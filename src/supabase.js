@@ -395,8 +395,9 @@ export async function supabasePortalRequest(path, method = 'GET', body) {
   const deleteRequest = path === 'admin/member/delete' && method === 'POST';
   const adminListRequest = path === 'admin' && method === 'GET';
   const boardRequest = method === 'GET' && ['board','board/roster'].includes(path);
-  const rpc = boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
-  const payload = boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
+  const profileRequest = path === 'profile' && method === 'PUT';
+  const rpc = profileRequest ? 'portal_update_profile' : boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
+  const payload = profileRequest ? {profile_data: body} : boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
     method: 'POST', headers: {apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json'},
     body: JSON.stringify(payload),

@@ -77,3 +77,14 @@ This is account deletion, not erasure of collected data. Accounts owning Storage
 objects are blocked until ownership is transferred; a failure rolls the operation
 back. `supabase/tests/delete_member.sql` verifies authorization, typed confirmation,
 self-protection, retention, visibility, and access using rolled-back fixtures.
+
+## Persistent profile photos
+
+Apply `supabase/migrations/20261020_profile_photo.sql`. Profile photos are resized
+to at most 256 pixels and re-encoded as JPEG in the browser, with 10 MB input and
+120,000-character saved-image limits. The authenticated `portal_update_profile`
+RPC saves photo, year, bio, major, and name atomically to the current user's profile.
+It ignores client account IDs and rejects invalid or oversized image data. The
+profile and directory read the same saved photo. Remove photo is saved explicitly
+with Save profile. Authentication metadata is not used as a replacement for the
+saved profile. Deleting an account retains its photo in the disabled archive.

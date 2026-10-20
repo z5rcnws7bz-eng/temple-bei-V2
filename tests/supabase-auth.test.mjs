@@ -93,3 +93,14 @@ test('account deletion uses the protected RPC and forwards explicit email confir
  try{await assert.rejects(supabasePortalRequest('admin/member/delete','POST',{id:'target',confirmationEmail:'target@example.invalid'}),/Only chapter administrators/);}
  finally{globalThis.fetch=originalFetch;if(descriptor)Object.defineProperty(globalThis,'localStorage',descriptor);else delete globalThis.localStorage;}
 });
+
+test('photo, year, and bio are sent together to the authenticated profile save RPC',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ const profile={name:'Member',major:'Biology',year:'2028',bio:'My saved bio',photo_data_url:'data:image/jpeg;base64,/9j/4P/Z'};
+ setStoredSession({access_token:'profile-test-token',user:{id:'profile-owner'}});
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_update_profile$/);assert.equal(options.headers.Authorization,'Bearer profile-test-token');assert.deepEqual(JSON.parse(options.body),{profile_data:profile});return new Response('{"ok":true}');};
+ try{assert.equal((await supabasePortalRequest('profile','PUT',profile)).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});

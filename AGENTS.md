@@ -12,3 +12,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Use the supplied Temple BEI brain-with-weights PNG for the top-right mascot and dedicated login page; keep its full aspect ratio without cropping.
 - Provide /login with member, e-board, and admin entry choices; retain Sites-owned ChatGPT authentication and server-enforced roles.
 - The root / and /login must show the login landing page even for an authenticated visitor. The dashboard lives at /app; continue/sign-in actions target /app and preserve the selected portal.
+
+- Save member photo, class year, major, and bio to their Supabase account profile; restore them on every sign-in and use the same saved photo in the directory.

@@ -112,3 +112,5 @@
 
 
 
+
+.member-photo{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}.avatar{overflow:hidden}.profile-photo-editor{display:flex;align-items:center;gap:20px;margin:20px 0}.profile-photo-preview{width:96px;height:96px;min-width:96px;font-size:28px}.profile-photo-editor small{display:block;color:var(--muted);max-width:420px;line-height:1.5}.profile-photo-editor .text-link{margin-top:10px}@media(max-width:600px){.profile-photo-editor{align-items:flex-start;flex-direction:column}}
