@@ -104,3 +104,14 @@ test('photo, year, and bio are sent together to the authenticated profile save R
  try{assert.equal((await supabasePortalRequest('profile','PUT',profile)).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('shift creation routes to authenticated Supabase persistence',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ const shift={id:'retry-safe-id',date:'2026-12-01',start:'15:00',end:'16:00',facility:'Test',activity:'Reading',capacity:4};
+ setStoredSession({access_token:'shift-test-token',user:{id:'officer'}});
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_create_shift$/);assert.equal(options.headers.Authorization,'Bearer shift-test-token');assert.deepEqual(JSON.parse(options.body),{shift_data:shift});return new Response('{"ok":true}');};
+ try{assert.equal((await supabasePortalRequest('board/shifts','POST',shift)).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
