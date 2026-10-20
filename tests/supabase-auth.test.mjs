@@ -40,3 +40,31 @@ test('invitation callback verifies identity and uses server-owned roles', async 
     await assert.rejects(acceptEmailLink(), /expired/);
   } finally {globalThis.fetch=originalFetch;globalThis.window=originalWindow;globalThis.localStorage=originalStorage;}
 });
+
+test('directory uses the authenticated Supabase endpoint and preserves account IDs', async () => {
+  const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+  const originalFetch=globalThis.fetch;
+  const storageDescriptor=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+  const store=new Map();
+  Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+  setStoredSession({access_token:'directory-test-token',user:{id:'reader'}});
+  const people=[{id:'account-one',name:'Same Name',major:'Biology',year:'2027'},{id:'account-two',name:'Same Name',major:'Chemistry',year:'2028'}];
+  let calls=0;
+  globalThis.fetch=async(url,options)=>{
+    assert.match(url,/\/rest\/v1\/rpc\/portal_directory$/);
+    assert.equal(options.headers.Authorization,'Bearer directory-test-token');
+    const payload=JSON.parse(options.body);
+    calls++;
+    if(calls===1){assert.equal(payload.member_id,null);return new Response(JSON.stringify({members:people}));}
+    if(calls===2){assert.equal(payload.member_id,'account-two');return new Response(JSON.stringify({member:{...people[1],bio:'Current profile'}}));}
+    return new Response(JSON.stringify({message:'Session expired'}),{status:401});
+  };
+  try{
+    assert.deepEqual((await supabasePortalRequest('directory')).members,people);
+    assert.equal((await supabasePortalRequest('directory/account-two')).member.bio,'Current profile');
+    await assert.rejects(supabasePortalRequest('directory'),/Session expired/);
+  }finally{
+    globalThis.fetch=originalFetch;
+    if(storageDescriptor)Object.defineProperty(globalThis,'localStorage',storageDescriptor);else delete globalThis.localStorage;
+  }
+});

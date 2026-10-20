@@ -52,3 +52,14 @@ unsupported actions return an explicit error instead of pretending to save.
 Aganiele Cetoute was invited separately through Supabase Authentication and
 assigned the approved admin role. Passwords are chosen by the account owner.
 Do not store account passwords or privileged Supabase keys in this repository.
+
+## Directory synchronization
+
+`supabase/migrations/20261020_directory_sync.sql` backfills missing account profiles
+and keeps account emails synchronized after registration or account updates.
+`portal_directory` joins profiles to existing Supabase Auth accounts by immutable
+user ID; disabled accounts and orphaned profiles are excluded. Profile names,
+majors, years, and bios come from the saved profile. Directory results omit private
+account fields. Accounts with matching names remain separate. The frontend uses
+this one authenticated source and refreshes it on entry and tab focus; errors are
+shown explicitly instead of falling back to stale data.

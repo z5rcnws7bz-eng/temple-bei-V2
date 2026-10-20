@@ -342,56 +342,6 @@ export async function updateSupabaseProfile(userId, { name, major, year, bio, em
   return result[0] || payload;
 }
 
-/**
- * Fetch active member profiles from Supabase for the chapter directory
- */
-export async function fetchSupabaseDirectory() {
-  if (!isSupabaseConfigured()) return null;
-  const session = getStoredSession();
-  const token = session?.access_token || SUPABASE_ANON_KEY;
-  const url = `${SUPABASE_URL}/rest/v1/profiles?disabled=eq.0&select=id,name,major,year,bio&order=name.asc`;
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    });
-    if (!response.ok) return null;
-    const members = await response.json();
-    return Array.isArray(members) ? members : null;
-  } catch (e) {
-    console.warn('Failed to fetch directory from Supabase:', e);
-    return null;
-  }
-}
-
-/**
- * Fetch single member profile details from Supabase
- */
-export async function fetchSupabaseMember(id) {
-  if (!isSupabaseConfigured()) return null;
-  const session = getStoredSession();
-  const token = session?.access_token || SUPABASE_ANON_KEY;
-  const url = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&disabled=eq.0&select=id,name,major,year,bio`;
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    });
-    if (!response.ok) return null;
-    const list = await response.json();
-    return list[0] || null;
-  } catch (e) {
-    console.warn('Failed to fetch member from Supabase:', e);
-    return null;
-  }
-}
-
 // Email confirmation, invitation, and recovery links carry a temporary session.
 // Validate it with Auth before accepting identity or server-owned role metadata.
 export async function acceptEmailLink() {
@@ -432,9 +382,12 @@ export async function setAccountPassword(password) {
 export async function supabasePortalRequest(path, method = 'GET', body) {
   const session = getStoredSession();
   if (!session?.access_token) throw Object.assign(new Error('Sign in to continue.'), {status: 401});
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/portal_request`, {
+  const directoryRequest = method === 'GET' && (path === 'directory' || path.startsWith('directory/'));
+  const rpc = directoryRequest ? 'portal_directory' : 'portal_request';
+  const payload = directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
     method: 'POST', headers: {apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json'},
-    body: JSON.stringify({path, method, body: body ?? null}),
+    body: JSON.stringify(payload),
   });
   const result = await response.json();
   if (!response.ok) throw Object.assign(new Error(result.message || 'The chapter service is unavailable.'), {status: response.status});
