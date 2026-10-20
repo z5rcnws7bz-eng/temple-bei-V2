@@ -115,3 +115,14 @@ test('shift creation routes to authenticated Supabase persistence',async()=>{
  try{assert.equal((await supabasePortalRequest('board/shifts','POST',shift)).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('all hour mutations use the protected audited Supabase RPC',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'hours-test-token',user:{id:'member'}});
+ let action;
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_hours_action$/);assert.equal(options.headers.Authorization,'Bearer hours-test-token');assert.deepEqual(JSON.parse(options.body),{action,entry_data:{id:'entry'}});return new Response('{"ok":true}');};
+ try{for(action of ['hours','hours/remove','hours/restore','board/review'])assert.equal((await supabasePortalRequest(action,'POST',{id:'entry'})).ok,true);}
+ finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
