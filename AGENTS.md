@@ -22,3 +22,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Scheduling includes coverage, account-owned waitlists and automatic assignment/cancellation reminders in-app and by email. Training resources and versioned self-reported completion belong to authenticated accounts and all changes are audited. Newsletter Chair uses a blue title badge; preserve green President and Co-President badges.
 
 - Published BEI (Student Info) training includes the supplied 11-slide student deck, an inline image-based viewer with readable slide text, and original PowerPoint/PDF downloads. Keep original slide content and files intact.
+
+- The slideshow navigation has Previous slide and Next slide buttons only; omit the middle slide selector.
