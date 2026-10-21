@@ -34,3 +34,13 @@ Database state reload tests switch authenticated database identity; they do not 
 - Existing approved entries were retained: Aganiele had 1.00 hour, yielding 98.85 approved hours; Jace had 1.50 hours, yielding 117.15 approved hours at verification time.
 - Personal profile totals use the same ledger as Overview; directory/profile-detail totals sum nonremoved approved records in Supabase. The hours table now preserves two decimal places rather than rounding to one.
 - The production rollback-only fixture confirmed a new 1.25-hour officer submission adds to a 97.85-hour historical balance and that directory, profile, Overview state, and removed-entry totals agree.
+
+## Gmail SMTP verification — October 21, 2026
+
+- Verified custom SMTP is ON in the production dashboard, with sender/username templeuni.bei@gmail.com, host smtp.gmail.com and port 465. No credential was read or stored in source.
+- Verified saved limits: 30 auth emails/hour, 30 signup/sign-in requests per five minutes per IP, and a 60-second minimum interval between messages to the same user.
+- Live Auth settings endpoint confirmed signup enabled, email provider enabled, and email confirmation required.
+- Sent one authorized recovery request to the registered Jace account at 2026-10-21 04:03:19 UTC (October 21, 12:03 AM Eastern). Auth returned HTTP 200; the auth log recorded user_recovery_requested and request completed with status 200.
+- A rollback-only database test initialized seven confirmed member identities and verified each account's state/profile ID and ordinary-member privileges. No test users were retained and no seven-email signup burst was sent.
+- Seven signup confirmations fit within the configured limits. Actual inbox receipt, spam placement, and seven complete email-confirmation flows have not yet been verified. Await the user's receipt confirmation before calling delivery verified.
+- SMTP is a live Supabase configuration change; no frontend deployment is required for it to take effect.
