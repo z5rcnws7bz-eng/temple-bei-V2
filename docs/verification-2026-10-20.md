@@ -61,3 +61,12 @@ Database state reload tests switch authenticated database identity; they do not 
 - Admin and E-board member-access controls show Re-enable for disabled accounts. E-board access uses a narrow server-checked toggle; role grants and deletion remain admin-only, officers cannot change administrator access, and self-disable is rejected.
 - The new rollback-only production database regression verified both leadership roles can disable/re-enable permitted targets, disabled portal access is denied, re-enabled portal access is restored, directory/detail flags change, and archived accounts cannot be restored through this control.
 - All 52 automated tests and the production build passed. Security advisor review found no anonymous exposure on the new RPC; authenticated execution is intentional and guarded by current database roles/status. Existing unrelated handle_new_user advisor notices remain outside this change.
+
+## Leadership identity and activity history — October 21, 2026
+
+- Both leadership banners use the currently authenticated user's name, with their email as fallback. The production account identity comes from the server's state RPC. A Jace session correctly displays Jace; it is not a shared officer identity.
+- Existing hour_audit already records actual actor UUID/name/role and before/after values for hour creation, editing, approval, removal and restoration.
+- Added private portal_activity_audit with database triggers for profiles (including E-board grants, suspension, profile and availability), shifts, bookings/assignments, and newsletters. Records include actor UUID/name/email/current role, timestamp, operation, resource and before/after values. Database operations without a user JWT are explicitly marked database, not attributed to Jace.
+- Audit history has no cascading account foreign keys; website roles cannot select, insert, edit or delete it. Database project administrators can review it in Supabase. It starts with this migration; no past events were reconstructed or invented.
+- Image changes retain fingerprints rather than copying image payloads into audit history.
+- Rollback-only tests used two officer identities and a member, attempted forged Jace attribution, and verified actor separation, access changes, shifts, assignments, newsletter publication/deletion, profile/availability changes, role grants and audit restrictions. Existing hours, newsletter/booking and disabled-account database regressions passed. All 52 automated tests and the production build passed.
