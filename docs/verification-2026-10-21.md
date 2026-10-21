@@ -36,3 +36,10 @@ Vite updated to 6.4.5 with patched transitive dependencies. Production dependenc
 The two QA profiles were archived and disabled, temporary officer access revoked, three test hour rows soft-deleted, and the two test shifts/bookings/newsletters removed. Audit history remains. Both archived accounts' existing tokens were denied portal access with 403. Temporary credential files were deleted. Real member content and balances were unchanged.
 
 No CAPTCHA provider is configured. Supabase leaked-password protection remains disabled. Guarded SECURITY DEFINER RPCs and intentional RPC-only RLS tables produce expected advisor notices. These checks do not establish immunity to bots or attacks; no load or physical-device testing was performed.
+
+
+## Follow-up mobile refinements
+
+The user explicitly requested skipping CAPTCHA; no Turnstile code or configuration was enabled. Improved phone login density while preserving the Temple logo and mascot, iPad column proportions, email keyboard/autofill and new-password autofill for signup, horizontally scrollable tabs, sticky modal heading, visible keyboard focus and reduced-motion support. Corrected the obsolete e-board login copy referring to a shared password.
+
+Local preview sign-in, signup and forgot-password layouts were inspected. Measured CSS widths of 320, 390 and approximately 768 pixels had no horizontal page overflow. The browser preview had a preexisting 80% scale, so viewport overrides were compensated and innerWidth/clientWidth checked instead of assuming the requested size was the CSS viewport. This follow-up changes presentation/autofill only; it does not rerun or expand the previously documented live account workflow tests.

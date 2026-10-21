@@ -16,3 +16,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Save member photo, class year, major, and bio to their Supabase account profile; restore them on every sign-in and use the same saved photo in the directory.
 
 - Keep the Temple BEI design while supporting phone and iPad browsers: use a touch-friendly navigation drawer through 1024px, preserve page width, scroll wide data tables inside their panels, and use safe-area spacing and readable form inputs.
+
+- Keep phone login compact so core sign-in controls appear sooner; preserve the BEI logo/mascot and full desktop layout. Respect reduced motion and visible keyboard focus. CAPTCHA was explicitly skipped by the user on October 21, 2026.
