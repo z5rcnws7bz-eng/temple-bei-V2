@@ -44,3 +44,13 @@ Database state reload tests switch authenticated database identity; they do not 
 - A rollback-only database test initialized seven confirmed member identities and verified each account's state/profile ID and ordinary-member privileges. No test users were retained and no seven-email signup burst was sent.
 - Seven signup confirmations fit within the configured limits. The user confirmed receipt of the test email at the registered Jace inbox. Seven complete signup/email-confirmation flows and spam placement across the members' mailboxes have not been exercised; the configured limits permit the seven-member onboarding group.
 - SMTP is a live Supabase configuration change; no frontend deployment is required for it to take effect.
+
+## Real new-member onboarding — October 21, 2026
+
+- Created one labeled QA member through the public production Auth signup endpoint, using the same email/password/name payload and production /login redirect as the website. This was a real signup, not an admin-confirmed database fixture.
+- Signup returned HTTP 200 and required email confirmation. A password sign-in before confirmation correctly failed with Email not confirmed.
+- Received the actual confirmation email in the chapter Gmail inbox for the authorized plus-address alias. Clicked its confirmation link; the production callback opened the ordinary member dashboard successfully without admin/eboard privileges.
+- In the production browser, saved major, class year, bio, Monday 14:00–17:00 availability, and a clearly labeled 0.25-hour QA entry. The entry correctly remained Pending. Verified the directory matched the saved profile and showed zero approved hours.
+- Signed out, signed in again through the Member login form, and verified profile fields, availability, and pending hours in the production UI. Also verified the same stored values through authenticated RPCs and a direct database read. Hours insertion produced an audit record.
+- Soft-removed the test hours through the normal member RPC and disabled the test profile reversibly. It no longer appears in the member directory or contributes active hours; both insertion/removal audit records remain. Real members and their balances were unchanged.
+- No application defects were found in this flow; no implementation changes were needed. All 51 automated tests and the production build passed again. This verifies one complete email-confirmation onboarding flow, not seven simultaneous inbox deliveries. Earlier SMTP-off and untested-delivery observations above describe the initial state and are superseded by the October 21 verification sections.
