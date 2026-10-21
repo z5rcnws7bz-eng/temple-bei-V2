@@ -351,6 +351,14 @@ export async function updateSupabaseProfile(userId, { name, major, year, bio, em
   return result[0] || payload;
 }
 
+export async function requestPasswordReset(email){
+ const cleanEmail=String(email||'').trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))throw new Error('Enter a valid registered email address.');
+ try{await supabaseAuthRequest('recover?redirect_to='+encodeURIComponent(window.location.origin+'/login'),{email:cleanEmail});}
+ catch(error){if(error.status===429||/rate limit/i.test(error.message))throw new Error('The email service has reached its sending limit. Please try again later or contact chapter leadership.');throw error;}
+ return 'If this email has a registered account, a password reset link will arrive shortly. Check your inbox and spam folder.';
+}
+
 // Email confirmation, invitation, and recovery links carry a temporary session.
 // Validate it with Auth before accepting identity or server-owned role metadata.
 export async function acceptEmailLink() {
@@ -372,13 +380,13 @@ export async function acceptEmailLink() {
     admin: user.app_metadata?.portal_role === 'admin',
   }};
   setStoredSession(session);
-  return {session, needsPassword: ['invite', 'recovery'].includes(params.get('type'))};
+  return {session, needsPassword: ['invite', 'recovery'].includes(params.get('type')),type:params.get('type')};
 }
 
 export async function setAccountPassword(password) {
   if (password.length < 12) throw new Error('Choose a password of at least 12 characters.');
   const session = getStoredSession();
-  if (!session?.access_token) throw new Error('Open your invitation link again before setting a password.');
+  if (!session?.access_token) throw new Error('Open a valid invitation or password reset link before setting a password.');
   const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     method: 'PUT', headers: {apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json'},
     body: JSON.stringify({password}),

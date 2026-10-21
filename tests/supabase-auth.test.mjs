@@ -178,3 +178,31 @@ test('member pickup and drop use account-bound booking transactions',async()=>{
  try{for(action of ['shifts/book','shifts/drop'])assert.equal((await supabasePortalRequest(action,'POST',{id:'shift'})).ok,true);}
  finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('password reset sends registered email to Auth with the production reset landing URL',async()=>{
+ const {requestPasswordReset}=await import('../src/supabase.js');const fetchBefore=globalThis.fetch,windowBefore=globalThis.window;
+ globalThis.window={location:{origin:'https://temple-bei-v2.vercel.app'}};
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/auth\/v1\/recover\?redirect_to=/);assert.equal(new URL(url).searchParams.get('redirect_to'),'https://temple-bei-v2.vercel.app/login');assert.deepEqual(JSON.parse(options.body),{email:'member@temple.edu'});return new Response('{}');};
+ try{assert.match(await requestPasswordReset(' Member@Temple.edu '),/If this email has a registered account/);await assert.rejects(requestPasswordReset('bad'),/valid registered email/);}
+ finally{globalThis.fetch=fetchBefore;if(windowBefore===undefined)delete globalThis.window;else globalThis.window=windowBefore;}
+});
+test('password reset exposes sending limits without pretending an email was delivered',async()=>{
+ const {requestPasswordReset}=await import('../src/supabase.js');const fetchBefore=globalThis.fetch,windowBefore=globalThis.window;globalThis.window={location:{origin:'https://temple-bei-v2.vercel.app'}};
+ globalThis.fetch=async()=>new Response('{"msg":"email rate limit exceeded"}',{status:429});
+ try{await assert.rejects(requestPasswordReset('member@temple.edu'),/sending limit/);}finally{globalThis.fetch=fetchBefore;if(windowBefore===undefined)delete globalThis.window;else globalThis.window=windowBefore;}
+});
+test('verified recovery links open reset mode and remove credentials from the URL',async()=>{
+ const {acceptEmailLink,getStoredSession}=await import('../src/supabase.js');const fetchBefore=globalThis.fetch,windowBefore=globalThis.window,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();let cleaned;
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ globalThis.window={location:{hash:'#access_token=recovery-token&refresh_token=recovery-refresh&type=recovery',pathname:'/login',search:'?reset=1'},history:{replaceState:(a,b,url)=>{cleaned=url;}}};
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/auth\/v1\/user$/);assert.equal(options.headers.Authorization,'Bearer recovery-token');return new Response(JSON.stringify({id:'member',email:'member@temple.edu',app_metadata:{},user_metadata:{name:'Member'}}));};
+ try{const result=await acceptEmailLink();assert.equal(result.type,'recovery');assert.equal(result.needsPassword,true);assert.equal(cleaned,'/login?reset=1');assert.equal(getStoredSession().user.id,'member');}
+ finally{globalThis.fetch=fetchBefore;if(windowBefore===undefined)delete globalThis.window;else globalThis.window=windowBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
+
+test('password changes use the verified recovery session and enforce minimum length',async()=>{
+ const {setAccountPassword,setStoredSession}=await import('../src/supabase.js');const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});setStoredSession({access_token:'verified-recovery',user:{id:'fixture'}});
+ let calls=0;globalThis.fetch=async(url,options)=>{calls++;assert.match(url,/\/auth\/v1\/user$/);assert.equal(options.method,'PUT');assert.equal(options.headers.Authorization,'Bearer verified-recovery');assert.equal(JSON.parse(options.body).password,'fixture-only-password');return new Response('{}');};
+ try{await assert.rejects(setAccountPassword('short'),/at least 12/);await setAccountPassword('fixture-only-password');assert.equal(calls,1);}finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});
