@@ -2,7 +2,7 @@
 
 ## Completed locally
 
-- 50 Node tests pass, including authorization, account profile isolation, hours, scheduling, directory, availability, newsletter link safety/edit controls, authenticated RPC routing, and expired-session renewal.
+- 51 Node tests pass, including authorization, account profile isolation, hours, scheduling, directory, availability, newsletter link safety/edit controls, authenticated RPC routing, and expired-session renewal.
 - Production Vite build and Sites packaging pass; all five Sites packaging checks pass.
 - Real browser check of the shared newsletter editor: uploaded the existing chapter mascot PNG, resized/re-encoded it, saved to an isolated local preview, and verified a decoded 1280-pixel image renders in the article.
 - Verified title link, Markdown body link, and pasted URL become HTTPS anchors opening in a new tab with `noopener noreferrer`.
@@ -27,3 +27,10 @@ Database state reload tests switch authenticated database identity; they do not 
 - Recovery redirects use the existing allowlisted production /login URL.
 - Supabase accepted one real recovery-email request to the registered Jace account (HTTP 200). Inbox delivery and a real password replacement were not exercised; the password update request is covered with an isolated mocked recovery session.
 - Confirmed in the production Supabase dashboard that custom SMTP is OFF. The default sender is unsuitable for onboarding seven users together: documented shared limit is two auth emails per hour, with recipient restrictions. Configure custom SMTP before treating multi-user email onboarding as ready.
+
+## Approved hour credits and profile totals
+
+- Added an idempotent historical approved credit of 97.85 hours to Aganiele's confirmed account and 115.65 hours to Jace's account. Each credit generated one hours audit record.
+- Existing approved entries were retained: Aganiele had 1.00 hour, yielding 98.85 approved hours; Jace had 1.50 hours, yielding 117.15 approved hours at verification time.
+- Personal profile totals use the same ledger as Overview; directory/profile-detail totals sum nonremoved approved records in Supabase. The hours table now preserves two decimal places rather than rounding to one.
+- The production rollback-only fixture confirmed a new 1.25-hour officer submission adds to a 97.85-hour historical balance and that directory, profile, Overview state, and removed-entry totals agree.
