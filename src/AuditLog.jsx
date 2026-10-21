@@ -1,7 +1,7 @@
 import React,{useState,useEffect} from 'react';
 import {auditActions,auditChanges,auditValue,auditSubject} from './audit-log.js';
 const blank={member:'',action:'',from:'',until:''};
-const entities={profiles:'Member profile / access',hours:'Hours',shifts:'Shift',bookings:'Shift assignment',newsletters:'Newsletter'};
+const entities={profiles:'Member profile / access',hours:'Hours',shifts:'Shift',bookings:'Shift assignment',newsletters:'Newsletter',portal_waitlist:'Shift waitlist',portal_notifications:'Notification / email',portal_training:'Training resource',portal_training_progress:'Training completion'};
 const timestamp=value=>new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'medium'}).format(new Date(value));
 export function AuditLog({request}){
  const [draft,setDraft]=useState(blank),[filters,setFilters]=useState(blank),[offset,setOffset]=useState(0),[revision,setRevision]=useState(0);

@@ -1,0 +1,43 @@
+do $$
+declare officer text:='00000000-0000-4000-8000-000000000791'; first_member text:='00000000-0000-4000-8000-000000000792'; second_member text:='00000000-0000-4000-8000-000000000793'; response jsonb; training_key text:='qa-training-791';
+begin
+ begin
+ insert into auth.users(id,email,email_confirmed_at,aud,role,raw_user_meta_data) values(officer::uuid,'operations-officer@example.invalid',now(),'authenticated','authenticated','{"name":"Operations Officer"}'),(first_member::uuid,'operations-one@example.invalid',now(),'authenticated','authenticated','{"name":"Operations One"}'),(second_member::uuid,'operations-two@example.invalid',now(),'authenticated','authenticated','{"name":"Operations Two"}');
+ update public.profiles set eboard=1 where id=officer;
+ perform set_config('request.jwt.claim.sub',officer,true);
+ perform public.portal_create_shift(jsonb_build_object('id','qa-coverage-791','date',(current_date+10)::text,'start','15:00','end','16:00','capacity',1,'facility','QA coverage','activity','QA'));
+ perform public.portal_roster_action('board/shifts/assign',jsonb_build_object('shiftId','qa-coverage-791','memberId',first_member));
+ if not exists(select 1 from public.portal_notifications where owner=first_member and kind='assignment') then raise exception 'Missing assignment notification';end if;
+ perform set_config('request.jwt.claim.sub',second_member,true);
+ perform public.portal_operations('waitlist/join','{"id":"qa-coverage-791","owner":"forged"}');
+ perform public.portal_operations('waitlist/join','{"id":"qa-coverage-791"}');
+ if (select count(*) from public.portal_waitlist where shift_id='qa-coverage-791')<>1 or not exists(select 1 from public.portal_waitlist where owner=second_member) then raise exception 'Waitlist ownership or deduplication failed';end if;
+ response:=public.portal_operations('data');
+ if jsonb_array_length(response->'waitlist')<>0 or jsonb_array_length(response->'notifications')<>0 then raise exception 'Member read private roster or notification';end if;
+ begin perform public.portal_operations('shift/cancel','{"id":"qa-coverage-791"}');raise exception 'Member cancelled shift';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub',first_member,true);
+ perform public.portal_booking_action('shifts/drop','{"id":"qa-coverage-791"}');
+ if not exists(select 1 from public.bookings where owner=second_member and shift_id='qa-coverage-791') or exists(select 1 from public.portal_waitlist where owner=second_member) or (select taken from public.shifts where id='qa-coverage-791')<>1 then raise exception 'Auto promotion/capacity failed';end if;
+ if not exists(select 1 from public.portal_notifications where owner=first_member and kind='cancellation') then raise exception 'Missing cancellation notification';end if;
+ perform set_config('request.jwt.claim.sub',officer,true);
+ perform public.portal_operations('training/save',jsonb_build_object('id',training_key,'title','QA orientation','body','Read the chapter instructions.','required',true,'resource_url','https://www.temple.edu/'));
+ perform set_config('request.jwt.claim.sub',second_member,true);
+ begin perform public.portal_operations('training/save',jsonb_build_object('title','Forged','body','Bad'));raise exception 'Member published training';exception when insufficient_privilege then null;end;
+ perform public.portal_operations('training/complete',jsonb_build_object('id',training_key,'version',1,'owner',officer));
+ if not exists(select 1 from public.portal_training_progress where owner=second_member and training_id=training_key) or exists(select 1 from public.portal_training_progress where owner=officer and training_id=training_key) then raise exception 'Completion owner forged';end if;
+ perform public.portal_operations('notifications/read','{"id":"all","owner":"forged"}');
+ if exists(select 1 from public.portal_notifications where owner=first_member and read_at is not null) then raise exception 'Read another member notification';end if;
+ perform set_config('request.jwt.claim.sub',officer,true);
+ perform public.portal_operations('training/save',jsonb_build_object('id',training_key,'title','QA revised','body','Updated instructions'));
+ perform set_config('request.jwt.claim.sub',second_member,true);
+ begin perform public.portal_operations('training/complete',jsonb_build_object('id',training_key,'version',1));raise exception 'Stale training completion accepted';exception when raise_exception then if sqlerrm not like 'This training changed%' then raise;end if;end;
+ perform set_config('request.jwt.claim.sub',officer,true);
+ perform public.portal_operations('shift/cancel','{"id":"qa-coverage-791"}');
+ if exists(select 1 from public.bookings where shift_id='qa-coverage-791') then raise exception 'Cancellation retained bookings';end if;
+ begin perform public.portal_roster_action('board/shifts/assign',jsonb_build_object('shiftId','qa-coverage-791','memberId',first_member));raise exception 'Booked cancelled shift';exception when raise_exception then if sqlerrm<>'This shift has been cancelled.' then raise;end if;end;
+ if not exists(select 1 from public.portal_activity_audit where actor_id=second_member and resource_table='portal_training_progress') or not exists(select 1 from public.portal_activity_audit where actor_id=second_member and resource_table='portal_waitlist') then raise exception 'Missing member audit';end if;
+ if has_table_privilege('authenticated','public.portal_waitlist','select') or has_function_privilege('authenticated','public.portal_claim_reminder_emails(text)','execute') then raise exception 'Private operation exposed';end if;
+ raise exception using errcode='PZ001',message='Rollback fixtures';
+ exception when sqlstate 'PZ001' then null;end;
+end $$;
+select 'PASS: account ownership, waitlist promotion, capacity, cancellation, notifications, training versions, authorization, audit and private email worker; fixtures rolled back' result;

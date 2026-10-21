@@ -18,3 +18,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Keep the Temple BEI design while supporting phone and iPad browsers: use a touch-friendly navigation drawer through 1024px, preserve page width, scroll wide data tables inside their panels, and use safe-area spacing and readable form inputs.
 
 - Keep phone login compact so core sign-in controls appear sooner; preserve the BEI logo/mascot and full desktop layout. Respect reduced motion and visible keyboard focus. CAPTCHA was explicitly skipped by the user on October 21, 2026.
+
+- Scheduling includes coverage, account-owned waitlists and automatic assignment/cancellation reminders in-app and by email. Training resources and versioned self-reported completion belong to authenticated accounts and all changes are audited. Newsletter Chair uses a blue title badge; preserve green President and Co-President badges.
