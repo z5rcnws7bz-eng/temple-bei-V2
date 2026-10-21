@@ -14,3 +14,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - The root / and /login must show the login landing page even for an authenticated visitor. The dashboard lives at /app; continue/sign-in actions target /app and preserve the selected portal.
 
 - Save member photo, class year, major, and bio to their Supabase account profile; restore them on every sign-in and use the same saved photo in the directory.
+
+- Keep the Temple BEI design while supporting phone and iPad browsers: use a touch-friendly navigation drawer through 1024px, preserve page width, scroll wide data tables inside their panels, and use safe-area spacing and readable form inputs.

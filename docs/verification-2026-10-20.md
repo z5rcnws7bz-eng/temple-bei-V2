@@ -78,3 +78,13 @@ Database state reload tests switch authenticated database identity; they do not 
 - The read-only portal_admin_audit RPC checks a current, confirmed, active administrator in the database on every request. Website/table grants remain unchanged; no direct audit-table access was granted.
 - Production rollback-only tests passed admin reads; anonymous, member, E-board, and disabled-admin denial; unified hour entries; actor/affected-member filtering; action filters; Eastern daylight-saving date boundaries; pagination and invalid date rejection.
 - All 55 automated tests and the production build passed. Browser-tested the actual shared AuditLog component with labeled local sample records, including member/action filtering and expanded before/after details. New audit RPC security-definer execution is intentional and server-authorized.
+
+## Aganiele access and responsive browsers — October 21, 2026
+
+- The user confirmed Aganiele signed in and has admin functionality. The agent's available signed-in browser tab remained Jace's session; no password was requested or changed, and no agent-performed Aganiele password login is claimed.
+- Verified Aganiele's actual confirmed tuv13760@temple.edu account via production state: admin=true and eboard=true; the current admin-only audit RPC succeeds for her identity.
+- A rollback-only profile update through the actual profile RPC generated an audit row with Aganiele's UUID, name, email and admin role. The change and test audit row were rolled back together.
+- Preserved the site design while adding a phone/iPad navigation drawer through 1024px, Escape closing, focus return, background scroll locking/inertness, resize cleanup, 44px touch targets, 16px inputs, safe-area padding and dynamic-viewport dialog limits.
+- Fixed phone-width overflow from member-management buttons; added wrapping for action groups and long account text, full-width audit filters, narrower form layouts and safe scrolling of wide tables. Scrollable hours/audit tables are keyboard-focusable labeled regions. Condensed the phone login header to bring the form higher on the page.
+- Local browser checks used the real App/LoginPage components with clearly labeled temporary layout fixtures, which were removed before deployment. Tested all nine main pages at 390px, seven main pages at 320px, and seven main pages at iPad portrait 768x1024 and landscape 1024x768. Visible body/panel widths stayed within the viewport; wide tables retained internal scrolling.
+- Shift, newsletter and hours dialogs fit the 390px viewport with internal vertical scrolling. Login layout and 16px inputs passed at 320, 390, 768 and 1024px. Drawer Escape/resize cleanup passed. These are browser viewport checks, not physical iOS hardware tests.

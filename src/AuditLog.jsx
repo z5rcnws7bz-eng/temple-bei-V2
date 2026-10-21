@@ -23,7 +23,7 @@ export function AuditLog({request}){
  {error&&<p className="error" role="alert">{error}</p>}
  {busy?<p role="status">Loading audit history…</p>:!error&&<>
  <p role="status" className="muted">{data.total} matching {data.total===1?'event':'events'}{data.total>0?` · Showing ${offset+1}–${Math.min(offset+25,data.total)}`:''}</p>
- {data.entries.length?<div className="audit-table-scroll"><table className="audit-table"><thead><tr><th scope="col">When (Eastern)</th><th scope="col">Who</th><th scope="col">Action / record</th><th scope="col">What changed</th></tr></thead><tbody>{data.entries.map(entry=><tr key={entry.id}>
+ {data.entries.length?<div className="audit-table-scroll" role="region" aria-label="Audit history table" tabIndex={0}><table className="audit-table"><thead><tr><th scope="col">When (Eastern)</th><th scope="col">Who</th><th scope="col">Action / record</th><th scope="col">What changed</th></tr></thead><tbody>{data.entries.map(entry=><tr key={entry.id}>
  <td><time dateTime={entry.recorded_at} title={entry.recorded_at}>{timestamp(entry.recorded_at)}</time></td>
  <td><b>{entry.actor_name||'Database / system'}</b><small>{entry.actor_email||entry.actor_role}</small><small>{entry.actor_role}</small></td>
  <td><b>{auditActions[entry.action]||entry.operation}</b><small>{entities[entry.resource_table]||entry.resource_table}</small><span>{auditSubject(entry)}</span></td>
