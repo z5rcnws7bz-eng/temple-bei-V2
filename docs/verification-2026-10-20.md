@@ -54,3 +54,10 @@ Database state reload tests switch authenticated database identity; they do not 
 - Signed out, signed in again through the Member login form, and verified profile fields, availability, and pending hours in the production UI. Also verified the same stored values through authenticated RPCs and a direct database read. Hours insertion produced an audit record.
 - Soft-removed the test hours through the normal member RPC and disabled the test profile reversibly. It no longer appears in the member directory or contributes active hours; both insertion/removal audit records remain. Real members and their balances were unchanged.
 - No application defects were found in this flow; no implementation changes were needed. All 51 automated tests and the production build passed again. This verifies one complete email-confirmation onboarding flow, not seven simultaneous inbox deliveries. Earlier SMTP-off and untested-delivery observations above describe the initial state and are superseded by the October 21 verification sections.
+
+## Disabled member visibility and restoration — October 21, 2026
+
+- Disabled, nondeleted accounts remain in the signed-in directory and profile detail with a pale red tint and an explicit Disabled label. Deleted/archived accounts remain excluded.
+- Admin and E-board member-access controls show Re-enable for disabled accounts. E-board access uses a narrow server-checked toggle; role grants and deletion remain admin-only, officers cannot change administrator access, and self-disable is rejected.
+- The new rollback-only production database regression verified both leadership roles can disable/re-enable permitted targets, disabled portal access is denied, re-enabled portal access is restored, directory/detail flags change, and archived accounts cannot be restored through this control.
+- All 52 automated tests and the production build passed. Security advisor review found no anonymous exposure on the new RPC; authenticated execution is intentional and guarded by current database roles/status. Existing unrelated handle_new_user advisor notices remain outside this change.

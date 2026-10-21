@@ -206,3 +206,17 @@ test('password changes use the verified recovery session and enforce minimum len
  let calls=0;globalThis.fetch=async(url,options)=>{calls++;assert.match(url,/\/auth\/v1\/user$/);assert.equal(options.method,'PUT');assert.equal(options.headers.Authorization,'Bearer verified-recovery');assert.equal(JSON.parse(options.body).password,'fixture-only-password');return new Response('{}');};
  try{await assert.rejects(setAccountPassword('short'),/at least 12/);await setAccountPassword('fixture-only-password');assert.equal(calls,1);}finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('disable and re-enable use the leadership-only access RPC while role grants stay admin-only',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');
+ const fetchBefore=globalThis.fetch,storageBefore=Object.getOwnPropertyDescriptor(globalThis,'localStorage');const store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});
+ setStoredSession({access_token:'leadership-test',user:{id:'officer'}});
+ let disabled;
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_set_member_disabled$/);assert.equal(options.headers.Authorization,'Bearer leadership-test');assert.deepEqual(JSON.parse(options.body),{member_id:'member',disabled});return new Response('{"ok":true}');};
+ try{
+  for(disabled of [true,false])assert.equal((await supabasePortalRequest('admin/member','POST',{id:'member',disabled})).ok,true);
+  globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_request$/);assert.deepEqual(JSON.parse(options.body),{path:'admin/member',method:'POST',body:{id:'member',eboard:true}});return new Response('{"ok":true}');};
+  await supabasePortalRequest('admin/member','POST',{id:'member',eboard:true});
+ }finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
+});

@@ -411,6 +411,7 @@ export async function supabasePortalRequest(path, method = 'GET', body) {
   const session = getStoredSession();
   if (!session?.access_token) throw Object.assign(new Error('Sign in to continue.'), {status: 401});
   const directoryRequest = method === 'GET' && (path === 'directory' || path.startsWith('directory/'));
+  const accessRequest = path === 'admin/member' && method === 'POST' && typeof body?.disabled === 'boolean' && !Object.hasOwn(body,'eboard');
   const deleteRequest = path === 'admin/member/delete' && method === 'POST';
   const adminListRequest = path === 'admin' && method === 'GET';
   const boardRequest = method === 'GET' && ['board','board/roster'].includes(path);
@@ -421,8 +422,8 @@ export async function supabasePortalRequest(path, method = 'GET', body) {
   const hoursRequest = method === 'POST' && ['hours','hours/remove','hours/restore','board/review'].includes(path);
   const shiftRequest = path === 'board/shifts' && method === 'POST';
   const profileRequest = path === 'profile' && method === 'PUT';
-  const rpc = bookingRequest ? 'portal_booking_action' : newsletterRequest ? 'portal_save_newsletter' : rosterRequest ? 'portal_roster_action' : availabilityRequest ? 'portal_save_availability' : hoursRequest ? 'portal_hours_action' : shiftRequest ? 'portal_create_shift' : profileRequest ? 'portal_update_profile' : boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
-  const payload = bookingRequest ? {action:path,booking_data:body} : newsletterRequest ? {newsletter_data: body} : rosterRequest ? {action: path, roster_data: body} : availabilityRequest ? {availability_data: body} : hoursRequest ? {action: path, entry_data: body} : shiftRequest ? {shift_data: body} : profileRequest ? {profile_data: body} : boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
+  const rpc = accessRequest ? 'portal_set_member_disabled' : bookingRequest ? 'portal_booking_action' : newsletterRequest ? 'portal_save_newsletter' : rosterRequest ? 'portal_roster_action' : availabilityRequest ? 'portal_save_availability' : hoursRequest ? 'portal_hours_action' : shiftRequest ? 'portal_create_shift' : profileRequest ? 'portal_update_profile' : boardRequest ? 'portal_board_data' : deleteRequest ? 'portal_delete_member' : adminListRequest ? 'portal_admin_members' : directoryRequest ? 'portal_directory' : 'portal_request';
+  const payload = accessRequest ? {member_id:body.id,disabled:body.disabled} : bookingRequest ? {action:path,booking_data:body} : newsletterRequest ? {newsletter_data: body} : rosterRequest ? {action: path, roster_data: body} : availabilityRequest ? {availability_data: body} : hoursRequest ? {action: path, entry_data: body} : shiftRequest ? {shift_data: body} : profileRequest ? {profile_data: body} : boardRequest ? {} : deleteRequest ? {member_id: body?.id, confirmation_email: body?.confirmationEmail} : adminListRequest ? {} : directoryRequest ? {member_id: path === 'directory' ? null : decodeURIComponent(path.slice(10))} : {path, method, body: body ?? null};
   const request=token=>fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
     method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),
   });
