@@ -70,3 +70,11 @@ Database state reload tests switch authenticated database identity; they do not 
 - Audit history has no cascading account foreign keys; website roles cannot select, insert, edit or delete it. Database project administrators can review it in Supabase. It starts with this migration; no past events were reconstructed or invented.
 - Image changes retain fingerprints rather than copying image payloads into audit history.
 - Rollback-only tests used two officer identities and a member, attempted forged Jace attribution, and verified actor separation, access changes, shifts, assignments, newsletter publication/deletion, profile/availability changes, role grants and audit restrictions. Existing hours, newsletter/booking and disabled-account database regressions passed. All 52 automated tests and the production build passed.
+
+## Admin audit log interface — October 21, 2026
+
+- Added an Audit log section to the Admin page, combining hours and management history. Shows actor name/account, role, action, resource, Eastern timestamp, and expandable before/after fields with stable actor and resource IDs.
+- Member filtering matches either the actor or the affected profile/hour/assignment owner. Added action and inclusive Eastern date filters, Clear, Refresh, and 25-event pagination. Deleted/retained profiles remain available in the member selector.
+- The read-only portal_admin_audit RPC checks a current, confirmed, active administrator in the database on every request. Website/table grants remain unchanged; no direct audit-table access was granted.
+- Production rollback-only tests passed admin reads; anonymous, member, E-board, and disabled-admin denial; unified hour entries; actor/affected-member filtering; action filters; Eastern daylight-saving date boundaries; pagination and invalid date rejection.
+- All 55 automated tests and the production build passed. Browser-tested the actual shared AuditLog component with labeled local sample records, including member/action filtering and expanded before/after details. New audit RPC security-definer execution is intentional and server-authorized.

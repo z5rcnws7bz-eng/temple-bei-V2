@@ -220,3 +220,10 @@ test('disable and re-enable use the leadership-only access RPC while role grants
   await supabasePortalRequest('admin/member','POST',{id:'member',eboard:true});
  }finally{globalThis.fetch=fetchBefore;if(storageBefore)Object.defineProperty(globalThis,'localStorage',storageBefore);else delete globalThis.localStorage;}
 });
+
+test('admin audit filters use the authenticated read-only RPC',async()=>{
+ const {supabasePortalRequest,setStoredSession}=await import('../src/supabase.js');const oldFetch=globalThis.fetch,oldStorage=Object.getOwnPropertyDescriptor(globalThis,'localStorage'),store=new Map();
+ Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)}});setStoredSession({access_token:'audit-admin',user:{id:'admin'}});
+ globalThis.fetch=async(url,options)=>{assert.match(url,/\/rpc\/portal_admin_audit$/);assert.equal(options.headers.Authorization,'Bearer audit-admin');assert.deepEqual(JSON.parse(options.body),{member_filter:'member',action_filter:'disabled',date_from:'2026-10-01',date_until:'2026-10-21',page_offset:25});return new Response('{"entries":[],"total":0,"members":[]}');};
+ try{assert.equal((await supabasePortalRequest('admin/audit','POST',{member:'member',action:'disabled',from:'2026-10-01',until:'2026-10-21',offset:25})).total,0);}finally{globalThis.fetch=oldFetch;if(oldStorage)Object.defineProperty(globalThis,'localStorage',oldStorage);else delete globalThis.localStorage;}
+});
