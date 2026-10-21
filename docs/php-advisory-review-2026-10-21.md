@@ -15,3 +15,5 @@ Existing protections remain: restricted database table grants, server-side accou
 For organization-wide readiness, maintain MFA on GitHub/Vercel/Supabase/Google, verify backup and restore procedures, review security alerts and access logs, and rotate credentials exposed outside their intended secret stores. These operational items were not silently changed or claimed complete by this review.
 
 The requested slideshow change removes only the middle slide selector. Previous/Next controls, first/last boundary disabling, keyboard navigation, slide text and downloads remain. Browser checks confirmed Next moves to slide 2, Previous returns to slide 1, and no select element remains in the controls.
+
+Update: the four development-tool notices described above have since been resolved. See development-dependency-security-2026-10-21.md for remediation and verification. The full dependency audit now reports zero known vulnerabilities.
