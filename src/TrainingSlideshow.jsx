@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import studentInfo from '../public/training/bei-student-info/manifest.json';
+import studentInfo from './bei-student-info.json';
 export function trainingSlideshow(resourceUrl){
  try{const url=new URL(resourceUrl);return url.origin==='https://temple-bei-v2.vercel.app'&&url.pathname===studentInfo.pptx?studentInfo:null;}catch{return null;}
 }
