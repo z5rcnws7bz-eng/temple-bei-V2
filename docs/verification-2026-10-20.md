@@ -42,5 +42,5 @@ Database state reload tests switch authenticated database identity; they do not 
 - Live Auth settings endpoint confirmed signup enabled, email provider enabled, and email confirmation required.
 - Sent one authorized recovery request to the registered Jace account at 2026-10-21 04:03:19 UTC (October 21, 12:03 AM Eastern). Auth returned HTTP 200; the auth log recorded user_recovery_requested and request completed with status 200.
 - A rollback-only database test initialized seven confirmed member identities and verified each account's state/profile ID and ordinary-member privileges. No test users were retained and no seven-email signup burst was sent.
-- Seven signup confirmations fit within the configured limits. Actual inbox receipt, spam placement, and seven complete email-confirmation flows have not yet been verified. Await the user's receipt confirmation before calling delivery verified.
+- Seven signup confirmations fit within the configured limits. The user confirmed receipt of the test email at the registered Jace inbox. Seven complete signup/email-confirmation flows and spam placement across the members' mailboxes have not been exercised; the configured limits permit the seven-member onboarding group.
 - SMTP is a live Supabase configuration change; no frontend deployment is required for it to take effect.
