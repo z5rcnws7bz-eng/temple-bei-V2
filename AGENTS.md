@@ -24,3 +24,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Published BEI (Student Info) training includes the supplied 11-slide student deck, an inline image-based viewer with readable slide text, and original PowerPoint/PDF downloads. Keep original slide content and files intact.
 
 - The slideshow navigation has Previous slide and Next slide buttons only; omit the middle slide selector.
+
+- BEI (Student Info) is required for all members. Admin and E-board training reports include completed, not completed and outdated-version records for registered, nonarchived accounts. Changing only the required flag preserves valid existing completions.

@@ -18,6 +18,7 @@ begin
  foreach person in array array['00000000-0000-4000-8000-000000000881','00000000-0000-4000-8000-000000000882'] loop
  perform set_config('request.jwt.claim.sub',person,true);
  data:=public.portal_operations('data',jsonb_build_object('owner','00000000-0000-4000-8000-000000000883','admin',true,'role','admin'));
+ if jsonb_array_length(data->'completion_roster')<>0 then raise exception 'General member obtained completion status roster';end if;
  if jsonb_array_length(data->'progress')<>0 then raise exception 'General member obtained completion roster';end if;
  expected:=case when person like '%881' then 'visibility-training-a' else 'visibility-training-b' end;
  for item in select value from jsonb_array_elements(data->'training') where value->>'id' in ('visibility-training-a','visibility-training-b') loop
@@ -30,10 +31,31 @@ begin
  data:=public.portal_operations('data');
  select count(*) into count_seen from jsonb_array_elements(data->'progress') where value->>'training_id' in ('visibility-training-a','visibility-training-b');
  if count_seen<>2 then raise exception 'Admin or E-board cannot see both members';end if;
+ select count(*) into count_seen from jsonb_array_elements(data->'completion_roster') where value->>'training_id'='visibility-training-a' and value->>'owner' in ('00000000-0000-4000-8000-000000000881','00000000-0000-4000-8000-000000000882');
+ if count_seen<>2 then raise exception 'Completed or missing-completion member omitted from roster';end if;
+ if not exists(select 1 from jsonb_array_elements(data->'completion_roster') where value->>'owner'='00000000-0000-4000-8000-000000000881' and value->>'training_id'='visibility-training-a' and value->>'status'='completed') or not exists(select 1 from jsonb_array_elements(data->'completion_roster') where value->>'owner'='00000000-0000-4000-8000-000000000882' and value->>'training_id'='visibility-training-a' and value->>'status'='not_completed') then raise exception 'Completion status attached to wrong account';end if;
+
  if not exists(select 1 from jsonb_array_elements(data->'progress') where value->>'owner'='00000000-0000-4000-8000-000000000881' and value->>'training_id'='visibility-training-a') then raise exception 'Completion owner forged';end if;
  end loop;
  if has_table_privilege('authenticated','public.portal_training_progress','select') or has_table_privilege('anon','public.portal_training_progress','select') then raise exception 'Completion table directly exposed';end if;
  begin perform 1 from public.portal_training_progress limit 1;raise exception 'Direct completion read succeeded';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+-- Marking unchanged content required preserves existing completions.
+update public.portal_training set required=true where id='visibility-training-a';
+set local role authenticated;
+do $$ declare data jsonb;begin
+ perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000881',true);
+ data:=public.portal_operations('data');
+ if not exists(select 1 from jsonb_array_elements(data->'training') where value->>'id'='visibility-training-a' and value->>'required'='true' and value->>'completed_at' is not null and value->>'version'='1') then raise exception 'Required flag invalidated valid completion';end if;
+end $$;
+reset role;
+update public.portal_training set version=2 where id='visibility-training-a';
+set local role authenticated;
+do $$ declare data jsonb;begin
+ perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000883',true);
+ data:=public.portal_operations('data');
+ if not exists(select 1 from jsonb_array_elements(data->'completion_roster') where value->>'owner'='00000000-0000-4000-8000-000000000881' and value->>'training_id'='visibility-training-a' and value->>'status'='update_required' and value->>'completed_at' is null) then raise exception 'Outdated completion reported as current';end if;
 end $$;
 reset role;
 -- Permission changes must take effect immediately, without refreshing JWT claims.
@@ -42,7 +64,7 @@ update public.profiles set disabled=1 where id='00000000-0000-4000-8000-00000000
 set local role authenticated;
 do $$ declare data jsonb;begin
  perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000883',true);
- data:=public.portal_operations('data');if jsonb_array_length(data->'progress')<>0 then raise exception 'Revoked E-board retained roster access';end if;
+ data:=public.portal_operations('data');if jsonb_array_length(data->'completion_roster')<>0 then raise exception 'Revoked E-board retained completion status roster';end if;if jsonb_array_length(data->'progress')<>0 then raise exception 'Revoked E-board retained roster access';end if;
  perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000884',true);
  begin perform public.portal_operations('data');raise exception 'Disabled admin retained access';exception when insufficient_privilege then null;end;
 end $$;
