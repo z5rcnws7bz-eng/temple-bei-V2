@@ -30,3 +30,61 @@ Browser verification remains unavailable under the browser service access policy
 
 ## Member directory
 Signed-in members can search saved profiles by name, major, and year, then open each profile's current bio and academic details. Directory API responses exclude emails, availability, hour logs, and account-management fields. Disabled members are omitted; member profiles are read from D1 at each open. Members edit their own information under Profile.
+
+## Vercel account access (October 20, 2026)
+
+Vercel uses Supabase email/password authentication. Set `VITE_SUPABASE_URL` to
+the project origin (without `/rest/v1/`) and set `VITE_SUPABASE_ANON_KEY` to the
+publishable key. `/login` and `/app` are client routes served by the Vercel rewrite.
+Email confirmation and invitation links return to `/login`; invitations provide
+a password setup form. Production never uses the local simulated accounts or
+email verification helper.
+
+Apply `supabase/migrations/20261020_portal_account_access.sql` for the authenticated
+account API. This migration was applied to production. Admin roles are assigned
+by a trusted operator in Auth app metadata (`portal_role: admin`); email names,
+user-editable metadata, and browser identity headers cannot grant admin access.
+The account API checks verified membership and serves state, profile, directory,
+availability, admin member management, and board reads. Hours, shift mutations,
+and newsletter publication still require migration from the Sites Worker; those
+unsupported actions return an explicit error instead of pretending to save.
+
+Aganiele Cetoute was invited separately through Supabase Authentication and
+assigned the approved admin role. Passwords are chosen by the account owner.
+Do not store account passwords or privileged Supabase keys in this repository.
+
+## Directory synchronization
+
+`supabase/migrations/20261020_directory_sync.sql` (applied to production) backfills missing account profiles
+and keeps account emails synchronized after registration or account updates.
+`portal_directory` joins profiles to existing Supabase Auth accounts by immutable
+user ID; disabled accounts and orphaned profiles are excluded. Profile names,
+majors, years, and bios come from the saved profile. Directory results omit private
+account fields. Accounts with matching names remain separate. The frontend uses
+this one authenticated source and refreshes it on entry and tab focus; errors are
+shown explicitly instead of falling back to stale data.
+
+## Account deletion with data retention
+
+The Admin member controls include Delete account. Administrators must type the
+member email to confirm; the server validates the administrator and blocks
+self-deletion. `supabase/migrations/20261020_delete_member.sql` adds the protected
+RPCs. Deletion removes the Supabase Auth account and archives the profile with
+`disabled=1`, `deleted_at`, and `deleted_by`. The profile ID and associated records
+remain for later studies/informatics. Member lists, directory, review queues, and
+rosters omit the archived account; current app API requests fail after Auth removal.
+This is account deletion, not erasure of collected data. Accounts owning Storage
+objects are blocked until ownership is transferred; a failure rolls the operation
+back. `supabase/tests/delete_member.sql` verifies authorization, typed confirmation,
+self-protection, retention, visibility, and access using rolled-back fixtures.
+
+## Persistent profile photos
+
+Apply `supabase/migrations/20261020_profile_photo.sql`. Profile photos are resized
+to at most 256 pixels and re-encoded as JPEG in the browser, with 10 MB input and
+120,000-character saved-image limits. The authenticated `portal_update_profile`
+RPC saves photo, year, bio, major, and name atomically to the current user's profile.
+It ignores client account IDs and rejects invalid or oversized image data. The
+profile and directory read the same saved photo. Remove photo is saved explicitly
+with Save profile. Authentication metadata is not used as a replacement for the
+saved profile. Deleting an account retains its photo in the disabled archive.

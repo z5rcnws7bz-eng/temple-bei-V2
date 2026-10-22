@@ -12,3 +12,17 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Use the supplied Temple BEI brain-with-weights PNG for the top-right mascot and dedicated login page; keep its full aspect ratio without cropping.
 - Provide /login with member, e-board, and admin entry choices; retain Sites-owned ChatGPT authentication and server-enforced roles.
 - The root / and /login must show the login landing page even for an authenticated visitor. The dashboard lives at /app; continue/sign-in actions target /app and preserve the selected portal.
+
+- Save member photo, class year, major, and bio to their Supabase account profile; restore them on every sign-in and use the same saved photo in the directory.
+
+- Keep the Temple BEI design while supporting phone and iPad browsers: use a touch-friendly navigation drawer through 1024px, preserve page width, scroll wide data tables inside their panels, and use safe-area spacing and readable form inputs.
+
+- Keep phone login compact so core sign-in controls appear sooner; preserve the BEI logo/mascot and full desktop layout. Respect reduced motion and visible keyboard focus. CAPTCHA was explicitly skipped by the user on October 21, 2026.
+
+- Scheduling includes coverage, account-owned waitlists and automatic assignment/cancellation reminders in-app and by email. Training resources and versioned self-reported completion belong to authenticated accounts and all changes are audited. Newsletter Chair uses a blue title badge; preserve green President and Co-President badges.
+
+- Published BEI (Student Info) training includes the supplied 11-slide student deck, an inline image-based viewer with readable slide text, and original PowerPoint/PDF downloads. Keep original slide content and files intact.
+
+- The slideshow navigation has Previous slide and Next slide buttons only; omit the middle slide selector.
+
+- BEI (Student Info) is required for all members. Admin and E-board training reports include completed, not completed and outdated-version records for registered, nonarchived accounts. Changing only the required flag preserves valid existing completions.

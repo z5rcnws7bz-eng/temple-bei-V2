@@ -98,6 +98,7 @@ function parseJwt(token) {
 export async function signInWithApple() {
   // If no Apple Services ID is configured yet (local testing mode), provide simulated Apple user
   if (!isAppleConfigured()) {
+    if (!import.meta.env.DEV) throw new Error('Apple sign-in is not configured. Please sign in with your email and password.');
     const simulatedAppleUser = {
       id: 'apple_usr_' + Math.random().toString(36).substring(2, 9),
       email: 'volunteer.apple@temple.edu',
@@ -164,7 +165,7 @@ export async function signInWithApple() {
             id: data.user.id,
             email: data.user.email || email,
             name: data.user.user_metadata?.name || fullName,
-            admin: (data.user.email || email).toLowerCase() === 'owner@temple.edu',
+            admin: data.user.app_metadata?.portal_role === 'admin',
           },
         };
         setStoredSession(session);
